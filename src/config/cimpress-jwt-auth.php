@@ -14,5 +14,10 @@ return [
     "allowedAuthIssuers" => [
         "https://cimpress.auth0.com/",
         "https://oauth.cimpress.io/"
+    ],
+    "jwks" => [
+        "domain" => "https://oauth.cimpress.io/",
+        "cache" => null,
+        "expiresAfterSeconds" => 86400
     ]
 ];
