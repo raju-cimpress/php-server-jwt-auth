@@ -36,7 +36,7 @@ class JwtVerifier
     public function decode(string $token): JwtVerifier
     {
         if (empty($token)) {
-            throw new JwtException(["Empty token passed"], "Unauthorised", 401);
+            throw new JwtException($this, ["Empty token passed"], "Unauthorised", 401);
         }
 
         try {
@@ -64,36 +64,36 @@ class JwtVerifier
             $headers = new \stdClass();
             $decoded = JWT::decode($token, $keySet, $headers);
 
-            if (empty($decoded->iss) || !in_array($decoded->iss, $this->config->getAllowedAuthIssuers())) {
-                throw new JwtException(["Unsupported issuer"], "Unauthorised", 401);
-            }
-
             $this->headers = (array) $headers;
             $this->payload = (array) $decoded;
-            return $this;
         } catch (InvalidArgumentException $e) {
-            throw new JwtException(["Invalid token passed", $e->getMessage()], "Unauthorised", 401, $e);
+            throw new JwtException($this, ["Invalid token passed", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (DomainException $e) {
-            throw new JwtException([$e->getMessage()], "Domain error", 500, $e);
+            throw new JwtException($this, [$e->getMessage()], "Domain error", 500, $e);
         } catch (SignatureInvalidException $e) {
             // provided JWT signature verification failed
-            throw new JwtException(["Provided JWT signature verification failed", $e->getMessage()], "Unauthorised", 401, $e);
+            throw new JwtException($this, ["Provided JWT signature verification failed", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (BeforeValidException $e) {
             // provided JWT is trying to be used before "nbf" claim OR
             // provided JWT is trying to be used before "iat" claim.
-            throw new JwtException(["Provided JWT is trying to be used before nbf or iat claim", $e->getMessage()], "Unauthorised", 401, $e);
+            throw new JwtException($this, ["Provided JWT is trying to be used before nbf or iat claim", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (ExpiredException $e) {
             // provided JWT is trying to be used after "exp" claim.
-            throw new JwtException(["Provided JWT is trying to be used after exp claim", $e->getMessage()], "Unauthorised", 401, $e);
+            throw new JwtException($this, ["Provided JWT is trying to be used after exp claim", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (UnexpectedValueException $e) {
             // provided JWT is malformed OR
             // provided JWT is missing an algorithm / using an unsupported algorithm OR
             // provided JWT algorithm does not match provided key OR
             // provided key ID in key/key-array is empty or invalid.
-            throw new JwtException([$e->getMessage()], "Unexpected value error", 500, $e);
+            throw new JwtException($this, [$e->getMessage()], "Unexpected value error", 500, $e);
         } catch (\Throwable $e) {
-            throw new JwtException([$e->getMessage()], "Unexpected server error", 500, $e);
+            throw new JwtException($this, [$e->getMessage()], "Unexpected server error", 500, $e);
         }
+
+        if (empty($this->payload["iss"]) || !in_array($this->payload["iss"], $this->config->getAllowedAuthIssuers())) {
+            throw new JwtException($this, ["Unsupported issuer"], "Unauthorised", 401);
+        }
+        return $this;
     }
 
     /**

@@ -21,13 +21,25 @@ $cache = new \Symfony\Component\Cache\Adapter\ApcuAdapter(
 
 $config = new \CimpressJwtAuth\Auth\Configuration(
     "https://oauth.cimpress.io/.well-known/jwks.json",
-    $cache
+    $cache,
+    86400,
+    [
+        "https://cimpress.auth0.com/"
+    ]
 );
 
 $jwtVerifyer = new \CimpressJwtAuth\Auth\JwtVerifier($config);
 try {
     $jwtVerifyer->decode($token);
-    var_dump($jwtVerifyer);
-} catch (Throwable $throwable) {
-    echo $throwable->getTraceAsString();
+    var_dump($jwtVerifyer->getHeaders());
+    var_dump($jwtVerifyer->getPayload());
+} catch (\Throwable $throwable) {
+    if ($throwable instanceof \CimpressJwtAuth\Exceptions\JwtException) {
+        var_dump($throwable->getVerifier());
+        var_dump($throwable->getErrors());
+        var_dump($throwable->getMessage());
+        var_dump($throwable->getCode());
+    } else {
+        echo $throwable->getTraceAsString();
+    }
 }
