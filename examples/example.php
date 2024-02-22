@@ -33,13 +33,11 @@ try {
     $jwtVerifyer->decode($token);
     var_dump($jwtVerifyer->getHeaders());
     var_dump($jwtVerifyer->getPayload());
+} catch (\CimpressJwtAuth\Exceptions\JwtException $throwable) {
+    var_dump($throwable->getVerifier());
+    var_dump($throwable->getErrors());
+    var_dump($throwable->getMessage());
+    var_dump($throwable->getCode());
 } catch (\Throwable $throwable) {
-    if ($throwable instanceof \CimpressJwtAuth\Exceptions\JwtException) {
-        var_dump($throwable->getVerifier());
-        var_dump($throwable->getErrors());
-        var_dump($throwable->getMessage());
-        var_dump($throwable->getCode());
-    } else {
-        echo $throwable->getTraceAsString();
-    }
+    echo $throwable->getTraceAsString();
 }
