@@ -7,10 +7,10 @@ use Psr\Cache\CacheItemPoolInterface;
 class Configuration
 {
     public function __construct(
-        private string                  $jwksDomain,
+        private string                  $jwksUri,
         private ?CacheItemPoolInterface $jwksCache = null,
-        private int $jwksExpiresAfter = 86400,
-        private array $allowedAuthIssuers = []
+        private int                     $jwksExpiresAfter = 86400,
+        private array                   $allowedAuthIssuers = []
     )
     {
     }
@@ -18,18 +18,18 @@ class Configuration
     /**
      * @return string
      */
-    public function getJwksDomain(): string
+    public function getJwksUri(): string
     {
-        return $this->jwksDomain;
+        return $this->jwksUri;
     }
 
     /**
-     * @param string $jwksDomain
+     * @param string $jwksUri
      * @return Configuration
      */
-    public function setJwksDomain(string $jwksDomain): Configuration
+    public function setJwksUri(string $jwksUri): Configuration
     {
-        $this->jwksDomain = $jwksDomain;
+        $this->jwksUri = $jwksUri;
         return $this;
     }
 

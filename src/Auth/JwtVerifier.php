@@ -2,6 +2,7 @@
 
 namespace CimpressJwtAuth\Auth;
 
+use CimpressJwtAuth\Exceptions\JwtException;
 use Firebase\JWT\CachedKeySet;
 use Firebase\JWT\JWT;
 use Firebase\JWT\SignatureInvalidException;
@@ -12,31 +13,35 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use InvalidArgumentException;
 use UnexpectedValueException;
-use Psr\Cache\CacheItemPoolInterface;
 
 class JwtVerifier
 {
-    private string $payload;
-    private $configs = [];
+    protected ?array $headers;
+    protected ?array $payload;
 
     /**
      * Constructor for the Token Verifier class.
      *
      */
     public function __construct(
-        private Configuration $config
+        private readonly Configuration $config
     ) {
     }
 
-    public function decode(string $token)
+    /**
+     * @param string $token
+     * @return void
+     * @throws JwtException
+     */
+    public function decode(string $token): JwtVerifier
     {
         if (empty($token)) {
-            throw new \ValueError("Empty token", 401);
+            throw new JwtException(["Empty token passed"], "Unauthorised", 401);
         }
 
         try {
             // The URI for the JWKS you wish to cache the results from
-            $jwksUri = $this->config->getJwksDomain().".well-known/jwks.json";;
+            $jwksUri = $this->config->getJwksUri();
 
             // Create an HTTP client (can be any PSR-7 compatible HTTP client)
             $httpClient = new Client();
@@ -56,30 +61,54 @@ class JwtVerifier
                 true  // $rateLimit    true to enable rate limit of 10 RPS on lookup of invalid keys
             );
 
-            $decoded = JWT::decode($token, $keySet);
+            $headers = new \stdClass();
+            $decoded = JWT::decode($token, $keySet, $headers);
+
+            if (empty($decoded->iss) || !in_array($decoded->iss, $this->config->getAllowedAuthIssuers())) {
+                throw new JwtException(["Unsupported issuer"], "Unauthorised", 401);
+            }
+
+            $this->headers = (array) $headers;
+            $this->payload = (array) $decoded;
+            return $this;
         } catch (InvalidArgumentException $e) {
-            // provided key/key-array is empty or malformed.
+            throw new JwtException(["Invalid token passed", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (DomainException $e) {
-            // provided algorithm is unsupported OR
-            // provided key is invalid OR
-            // unknown error thrown in openSSL or libsodium OR
-            // libsodium is required but not available.
+            throw new JwtException([$e->getMessage()], "Domain error", 500, $e);
         } catch (SignatureInvalidException $e) {
-            // provided JWT signature verification failed.
+            // provided JWT signature verification failed
+            throw new JwtException(["Provided JWT signature verification failed", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (BeforeValidException $e) {
             // provided JWT is trying to be used before "nbf" claim OR
             // provided JWT is trying to be used before "iat" claim.
+            throw new JwtException(["Provided JWT is trying to be used before nbf or iat claim", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (ExpiredException $e) {
             // provided JWT is trying to be used after "exp" claim.
+            throw new JwtException(["Provided JWT is trying to be used after exp claim", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (UnexpectedValueException $e) {
             // provided JWT is malformed OR
             // provided JWT is missing an algorithm / using an unsupported algorithm OR
             // provided JWT algorithm does not match provided key OR
             // provided key ID in key/key-array is empty or invalid.
+            throw new JwtException([$e->getMessage()], "Unexpected value error", 500, $e);
+        } catch (\Throwable $e) {
+            throw new JwtException([$e->getMessage()], "Unexpected server error", 500, $e);
         }
+    }
 
-        if (empty($iss) || !in_array($iss, $this->config->getAllowedAuthIssuers())) {
-            throw new \DomainException("Unsupported issuer", 401);
-        }
+    /**
+     * @return array|null
+     */
+    public function getHeaders(): ?array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getPayload(): ?array
+    {
+        return $this->payload;
     }
 }

@@ -10,6 +10,7 @@
         "firebase/php-jwt": "^6.8"
     },
     "require-dev": {
+        "symfony/cache": "^6.4",
         "phpunit/phpunit": "^9.0"
     },
     "autoload": {
