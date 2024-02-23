@@ -16,8 +16,8 @@ use UnexpectedValueException;
 
 class JwtVerifier
 {
-    protected ?array $headers;
-    protected ?array $payload;
+    protected array $headers = [];
+    protected array $payload = [];
 
     /**
      * Constructor for the Token Verifier class.
@@ -76,10 +76,14 @@ class JwtVerifier
         } catch (BeforeValidException $e) {
             // provided JWT is trying to be used before "nbf" claim OR
             // provided JWT is trying to be used before "iat" claim.
+            $this->payload = (array) $e->getPayload();
             throw new JwtException($this, ["Provided JWT is trying to be used before nbf or iat claim", $e->getMessage()], "Unauthorised", 401, $e);
         } catch (ExpiredException $e) {
             // provided JWT is trying to be used after "exp" claim.
+            $this->payload = (array) $e->getPayload();
             throw new JwtException($this, ["Provided JWT is trying to be used after exp claim", $e->getMessage()], "Unauthorised", 401, $e);
+        } catch (\LogicException $e) {
+            // errors having to do with environmental setup or malformed JWT Keys
         } catch (UnexpectedValueException $e) {
             // provided JWT is malformed OR
             // provided JWT is missing an algorithm / using an unsupported algorithm OR

@@ -1,8 +1,10 @@
 <?php
 
-namespace Tests;
+namespace CimpressJwtAuth\Tests;
 
-trait JWTTest
+use PHPUnit\Framework\TestCase;
+
+class JWTTest extends TestCase
 {
     public function testValidAuth0Token()
     {

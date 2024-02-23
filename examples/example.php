@@ -2,7 +2,7 @@
 $loader = require 'vendor/autoload.php';
 $loader->add('AppName', __DIR__.'/../src/');
 
-$token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1qbENNemxCTnpneE1ETkJSVFpHTURFd09ETkRSalJGTlRSR04wTXpPRUpETnpORlFrUTROUSJ9.eyJodHRwczovL2NsYWltcy5jaW1wcmVzcy5pby93YXMiOlsiYWRmc3xSYWp1Lk1vdXJ5YUBwaXhhcnRwcmludGluZy5jb20iXSwiaHR0cHM6Ly9jbGFpbXMuY2ltcHJlc3MuaW8vZW1haWwiOiJSYWp1Lk1vdXJ5YUBwaXhhcnRwcmludGluZy5jb20iLCJodHRwczovL2NsYWltcy5jaW1wcmVzcy5pby9jYW5vbmljYWxfaWQiOiJSYWp1Lk1vdXJ5YUBwaXhhcnRwcmludGluZy5jb20iLCJodHRwczovL2NsYWltcy5jaW1wcmVzcy5pby9hY2NvdW50Ijoic1V3Sm5jbzFWN1J0cWJMNlc4RHVROCIsImh0dHBzOi8vY2xhaW1zLmNpbXByZXNzLmlvL2NpbXByZXNzX2ludGVybmFsIjp0cnVlLCJpc3MiOiJodHRwczovL2NpbXByZXNzLmF1dGgwLmNvbS8iLCJzdWIiOiJ3YWFkfEpqMzZwbG5iS1FoN01UX1RvRklOYjFfaDBEd3dxOGNtQzJ1VDFRTDZZQUEiLCJhdWQiOiJodHRwczovL2FwaS5jaW1wcmVzcy5pby8iLCJpYXQiOjE3MDg1ODgwMTQsImV4cCI6MTcwODY3NDQxNCwiYXpwIjoiU1Qwd3dPYzBSYXZLNlA2aGhBUFo5T2MyWEZEMmRHVUYiLCJndHkiOiJwYXNzd29yZCJ9.NdEvFyYTav9kdhp4rJOO32e_WD1RzZ4daxqxivR8e89IDiKrswMuj3ERCxdvMWrpzm4eiVZ-THwMlIcMNj29agW1WX-1gDI2sEVpkLJaqarCscQOaKOUGyPweAOH7BK3Qo_8i9CkE4Y_fIG_lq78S0fdiLDZ1eJxEc5QTX6JldY4UTAKWBljGmkzGyNLxNfV6ywYPEm9fx_gNvhzp0z2jgBmjLGR44U_Gaofc_iZnEMSJ4M52kXB_FGwQMI50J2UaEhb_8jl6i7N63gmh5gWKFYImEehVqloxtoVbzJpJGNEIGsxKurNPY7DvSGuK5GnBFmoK_MgT7IepwoAU6BXQg";
+$token = "<token>";
 
 $cache = new \Symfony\Component\Cache\Adapter\ApcuAdapter(
 
@@ -24,6 +24,7 @@ $config = new \CimpressJwtAuth\Auth\Configuration(
     $cache,
     86400,
     [
+        "https://oauth.cimpress.io/",
         "https://cimpress.auth0.com/"
     ]
 );
@@ -31,13 +32,18 @@ $config = new \CimpressJwtAuth\Auth\Configuration(
 $jwtVerifyer = new \CimpressJwtAuth\Auth\JwtVerifier($config);
 try {
     $jwtVerifyer->decode($token);
-    var_dump($jwtVerifyer->getHeaders());
-    var_dump($jwtVerifyer->getPayload());
+    echo "\nCode: 200";
+    echo "\nHeader: ".json_encode($jwtVerifyer->getHeaders());
+    echo "\nPayload: ".json_encode($jwtVerifyer->getPayload());
 } catch (\CimpressJwtAuth\Exceptions\JwtException $throwable) {
-    var_dump($throwable->getVerifier());
-    var_dump($throwable->getErrors());
-    var_dump($throwable->getMessage());
-    var_dump($throwable->getCode());
+    echo "\nCode: {$throwable->getCode()}";
+    echo "\nMessage: {$throwable->getMessage()}";
+    echo "\nErrors: ".print_r($throwable->getErrors(), true);;
+    if ($throwable->getVerifier()) {
+        echo "\nHeader: ".print_r($throwable->getVerifier()->getHeaders(), true);
+        echo "\nPayload: ".print_r($throwable->getVerifier()->getPayload(), true);
+    }
+    var_dump($throwable->getPrevious());
 } catch (\Throwable $throwable) {
     echo $throwable->getTraceAsString();
 }
